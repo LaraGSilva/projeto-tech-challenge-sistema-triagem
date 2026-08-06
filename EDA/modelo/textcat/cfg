@@ -1,0 +1,11 @@
+{
+  "labels":[
+    "neoplasms",
+    "digestive system diseases",
+    "nervous system diseases",
+    "cardiovascular diseases",
+    "general pathological conditions"
+  ],
+  "threshold":0.0,
+  "positive_label":null
+}
