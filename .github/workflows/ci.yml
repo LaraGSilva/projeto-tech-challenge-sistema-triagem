@@ -1,47 +1,51 @@
-# Workflow responsável pelos testes e validação do modelo
-
 name: CI - MLOPS
 
-# conditions
-on: 
-    push: 
-        branches: 
-            - main
-            - develop
-    pull_request:
-        branches:
-            - main
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
 env:
-    PYTHON_VERSION: '3.11'           
+  UV_FROZEN: "true"          # falha se uv.lock estiver desatualizado
+  PYTHON_VERSION: "3.11"
 
-# Jobs
 jobs:
-    validacao-ambiente:
-        runs-on: ubuntu-latest #(máquina virtual que será utilizada no workflow)
+  validacao-ambiente:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout 
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Install Python
-              uses: actions/setup-python@v6
-              with:
-                python-version: ${{env.PYTHON_VERSION}}
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-            - name: Run script validation
-              run: |
-                python validate_env.py
+      - name: Instalar Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
 
-            - name: Python version
-              run: python --version
+      - name: Instalar dependencias
+        run: uv sync --all-extras --dev
 
-            - name: Echo output
-              run: echo "python instalado e validado"
-              
+      - name: Validar versão do Python
+        run: uv run python --version
 
+      - name: Run script validation
+        run: uv run python validate_env.py
 
+      - name: Verificar notebooks sem outputs (nbstripout)
+        run: |
+          uv run nbstripout --verify . || \
+          (echo "Erro: Notebook com outputs, limpe antes de commitar" && exit 1)
 
-            
+    #   - name: Run Linter (ruff)
+    #     run: uv run ruff check .
 
-
-
+      - name: Echo output
+        run: echo "Ambiente validado com sucesso"
