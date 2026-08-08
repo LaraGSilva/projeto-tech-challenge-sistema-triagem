@@ -38,6 +38,18 @@ jobs:
             - name: Echo output
               run: echo "python instalado e validado"
               
+            - name: Instalar  nbstripout
+              run: pip install nbstripout
+
+            - name: Analisar Notebook
+              run: |
+               nbstripout --verify . || (echo "Erro: Notebook com outpusts, limpe antes de commitar" && exite code 1)
+
+            - name: Instalar o ruff (Linter)
+              run: pip install ruff
+
+            - name: Run Linter
+              run: ruff check .
 
 
 
