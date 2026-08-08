@@ -1,0 +1,47 @@
+# Workflow responsável pelos testes e validação do modelo
+
+name: CI - MLOPS
+
+# conditions
+on: 
+    push: 
+        branches: 
+            - main
+            - develop
+    pull_request:
+        branches:
+            - main
+env:
+    PYTHON_VERSION: '3.11'           
+
+# Jobs
+jobs:
+    validacao-ambiente:
+        runs-on: ubuntu-latest #(máquina virtual que será utilizada no workflow)
+
+        steps:
+            - name: Checkout 
+              uses: actions/checkout@v4
+
+            - name: Install Python
+              uses: actions/setup-python@v6
+              with:
+                python-version: ${{env.PYTHON_VERSION}}
+
+            - name: Run script validation
+              run: |
+                python validate_env.py
+
+            - name: Python version
+              run: python --version
+
+            - name: Echo output
+              run: echo "python instalado e validado"
+              
+
+
+
+            
+
+
+
