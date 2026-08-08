@@ -30,7 +30,7 @@ jobs:
 
             - name: Run script validation
               run: |
-                python valite_env.py
+                python validate_env.py
 
             - name: Python version
               run: python --version
