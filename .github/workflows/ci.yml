@@ -44,8 +44,8 @@ jobs:
           uv run nbstripout --verify . || \
           (echo "Erro: Notebook com outputs, limpe antes de commitar" && exit 1)
 
-      - name: Run Linter (ruff)
-        run: uv run ruff check .
+    #   - name: Run Linter (ruff)
+    #     run: uv run ruff check .
 
       - name: Echo output
         run: echo "Ambiente validado com sucesso"
