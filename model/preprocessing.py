@@ -1,6 +1,4 @@
 import pandas as pd
-import os
-import sys
 
 
 def limpa_dados(df):

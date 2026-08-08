@@ -23,10 +23,14 @@ jobs:
             - name: Checkout 
               uses: actions/checkout@v4
 
+            - name: Instalar uv
+              run: pip install uv
+
             - name: Install Python
               uses: actions/setup-python@v6
               with:
                 python-version: ${{env.PYTHON_VERSION}}
+                cache: 'uv'
 
             - name: Run script validation
               run: |
@@ -50,6 +54,13 @@ jobs:
 
             - name: Run Linter
               run: ruff check .
+            
+            - name: Inicializar uv
+              run: uv init
+            
+            - name: Instalar dependencias uv
+              run: uv pip install -r requirements.txt
+
 
 
 
