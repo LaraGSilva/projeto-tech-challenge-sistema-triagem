@@ -1,10 +1,6 @@
 name: CI - MLOPS
 
 on:
-  push:
-    branches:
-      - main
-      - develop
   pull_request:
     branches:
       - main
@@ -49,3 +45,15 @@ jobs:
 
       - name: Echo output
         run: echo "Ambiente validado com sucesso"
+    
+      - name: Dummy training
+        run: uv run python dummy_train.py
+
+      - name: Dummy training governance
+        env: 
+            GITHUB_SHA: $${{ github.sha }}
+        run: uv run python dummy_train_governance.py
+        
+      - name: Tests pytest
+        run: uv run -m pytest test/ -v
+       
