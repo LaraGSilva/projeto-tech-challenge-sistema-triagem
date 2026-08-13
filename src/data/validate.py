@@ -3,13 +3,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-logger =  logging.getLogger(__name__)
-raw_path = Path(__file__).parent / "raw" / 'medical_tc_train.csv'
-
+logger = logging.getLogger(__name__)
 
 SCHEMA = {
     "condition_label": np.int64,
-    "medical_abstract": str
+    "medical_abstract": str,
+    "conditional_name": str
 }
 
 
@@ -28,14 +27,10 @@ def validate_schema(raw_path) -> bool:
     for col, expected_type in SCHEMA.items():
         actual_type = df[col].dtype.type
         assert actual_type == expected_type, (
-            f"Tipo errado em {col}, esperado {expected_type}, obtido {actual_type}"
+            f"Tipo errado em {col}, esperado {
+                expected_type}, obtido {actual_type}"
         )
 
-    logger.info(f"✅ Schema válido: {len(df)} linhas x {len(df.columns)} colunas")
-    return True  
-
-if __name__ == "__main__":
-    logging.basicConfig(
-    level=logging.INFO,  # define o nível mínimo de log
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    validate_schema(raw_path)
+    logger.info(f"✅ Schema válido: {len(df)} linhas x {
+                len(df.columns)} colunas")
+    return True
