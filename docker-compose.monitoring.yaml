@@ -1,0 +1,70 @@
+# =============================================================================
+# Stack de observabilidade da API (Etapa 3):  API + Prometheus + Grafana
+#
+#   docker compose -f docker-compose.monitoring.yaml up --build
+#
+#   API .......... http://localhost:8000/docs
+#   Métricas ..... http://localhost:8000/metrics
+#   Prometheus ... http://localhost:9090
+#   Grafana ...... http://localhost:3000   (admin / admin) — dashboard já provisionado
+#
+# Pré-requisito: models/classifier.pkl e models/metadata.json presentes
+#                (rode `python -m src.pipeline` antes).
+# =============================================================================
+name: triagem-monitoring
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: triagem-api:baseline
+    container_name: triagem-api
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /app/models/classifier.pkl
+      METADATA_PATH: /app/models/metadata.json
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: triagem-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: triagem-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

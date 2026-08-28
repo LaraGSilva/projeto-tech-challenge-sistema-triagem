@@ -1,0 +1,59 @@
+name: CI - MLOPS
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  UV_FROZEN: "true"          # falha se uv.lock estiver desatualizado
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  validacao-ambiente:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Instalar Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Instalar dependencias
+        run: uv sync --all-extras --dev
+
+      - name: Validar versão do Python
+        run: uv run python --version
+
+      - name: Run script validation
+        run: uv run python validate_env.py
+
+      - name: Verificar notebooks sem outputs (nbstripout)
+        run: |
+          uv run nbstripout --verify . || \
+          (echo "Erro: Notebook com outputs, limpe antes de commitar" && exit 1)
+
+    #   - name: Run Linter (ruff)
+    #     run: uv run ruff check .
+
+      - name: Echo output
+        run: echo "Ambiente validado com sucesso"
+    
+      - name: Dummy training
+        run: uv run python dummy_train.py
+
+      - name: Dummy training governance
+        env: 
+            GITHUB_SHA: $${{ github.sha }}
+        run: uv run python dummy_train_governance.py
+        
+      - name: Tests pytest
+        run: uv run -m pytest test/ -v
+       

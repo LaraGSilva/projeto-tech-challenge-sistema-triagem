@@ -1,0 +1,66 @@
+name: Pipeline de treinamento ML
+
+on:
+    push:
+        branches: 
+            - main
+        paths:
+          - 'src/models/**'
+          - 'pyproject.toml'
+          - 'poetry.lpock'
+        # paths_ignore:
+        #   - 'documents/**'
+        #   - 'EDA/**'
+        #   - 'data/**'
+
+env:
+    PYTHON_VERSION: '3.11'
+
+jobs:
+    preparando-dados:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v6
+
+            - name: Instalar uv
+              uses: astral-sh/setup-uv@v4
+              with:
+               enable-cache: true
+               cache-dependency-glob: "uv.lock"
+
+            - name: Instalar Python
+              run: uv python install ${{ env.PYTHON_VERSION }}
+
+            - name: Instalar dependencias
+              run: uv sync --all-extras --dev
+
+            - name: Rodar ETL - preparar dados
+              run: uv run python model/preprocessing.py
+
+            - name: Salvar dataset como artefato
+              run: actions/upload-artifact@v6
+              with:
+                name: dataset
+                path: dataset_processado.csv
+
+    treinamento:
+        needs: preparando-dados
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v6
+            
+            - name: Download do artefato
+              uses: actions/download-artifact@v7
+              with:
+                name: dataset
+            
+            - name: verificar download artifact
+              run: |
+                echo "Conteudo do diretorio atual: "
+                ls -la
+                echo "Lendo as primeiras linhas do csv chamado dataset:"
+                cat dataset_processado.csv
+
+

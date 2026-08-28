@@ -1,0 +1,11 @@
+# Dependências mínimas do serviço de inferência (imagem Docker da API).
+# Mantido enxuto de propósito: baseline de latência e Etapa 4 (ONNX).
+# scikit-learn fixado na versão usada no treino para o pickle carregar limpo.
+fastapi==0.135.2
+uvicorn[standard]==0.42.0
+pydantic==2.12.5
+prometheus-client==0.26.0
+scikit-learn==1.8.0
+numpy==2.3.5
+scipy==1.17.1
+joblib==1.5.3

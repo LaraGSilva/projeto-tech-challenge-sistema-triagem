@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+src/data/*
+
+EDA/modelo/*
+
+.dvc
+.ruff_cahe

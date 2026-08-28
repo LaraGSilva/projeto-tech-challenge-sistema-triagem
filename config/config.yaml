@@ -1,0 +1,21 @@
+# Parâmetros do classificador NLP de laudos médicos
+# Alvo: condition_label (categoria da doença) a partir do texto do laudo
+# Modelo: TF-IDF + Logistic Regression (sklearn Pipeline)
+
+training:
+  test_size: 0.2
+  random_state: 42
+  classifier:
+    C: 0.3
+    max_iter: 2000
+    class_weight: balanced
+
+paths:
+  raw_train: src/data/raw/medical_tc_train.csv
+  raw_test: src/data/raw/medical_tc_test.csv
+  raw_labels: src/data/raw/medical_tc_labels.csv
+  processed: src/data/processed/data_processed_final.csv
+  model: models/classifier.pkl
+
+evaluation:
+  accuracy_threshold: 0.55

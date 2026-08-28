@@ -1,0 +1,51 @@
+{
+  "accuracy": 0.6199134199134199,
+  "f1_weighted": 0.6049264025325065,
+  "threshold": 0.55,
+  "model_path": "C:\\Users\\lara-\\workspace\\projeto-tech-challenge-sistema-triagem\\models\\classifier.pkl",
+  "report": {
+    "1": {
+      "precision": 0.7233644859813084,
+      "recall": 0.7648221343873518,
+      "f1-score": 0.7435158501440923,
+      "support": 506.0
+    },
+    "2": {
+      "precision": 0.5054945054945055,
+      "recall": 0.7698744769874477,
+      "f1-score": 0.6102819237147595,
+      "support": 239.0
+    },
+    "3": {
+      "precision": 0.5034324942791762,
+      "recall": 0.7142857142857143,
+      "f1-score": 0.5906040268456376,
+      "support": 308.0
+    },
+    "4": {
+      "precision": 0.6719858156028369,
+      "recall": 0.7766393442622951,
+      "f1-score": 0.720532319391635,
+      "support": 488.0
+    },
+    "5": {
+      "precision": 0.6390243902439025,
+      "recall": 0.34070221066319895,
+      "f1-score": 0.4444444444444444,
+      "support": 769.0
+    },
+    "accuracy": 0.6199134199134199,
+    "macro avg": {
+      "precision": 0.6086603383203459,
+      "recall": 0.6732647761172016,
+      "f1-score": 0.6218757129081137,
+      "support": 2310.0
+    },
+    "weighted avg": {
+      "precision": 0.6325678177789873,
+      "recall": 0.6199134199134199,
+      "f1-score": 0.6049264025325065,
+      "support": 2310.0
+    }
+  }
+}
