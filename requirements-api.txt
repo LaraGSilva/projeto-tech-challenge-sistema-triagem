@@ -1,11 +1,11 @@
 # Dependências mínimas do serviço de inferência (imagem Docker da API).
 # Mantido enxuto de propósito: baseline de latência e Etapa 4 (ONNX).
-# scikit-learn fixado na versão usada no treino para o pickle carregar limpo.
-fastapi==0.135.2
-uvicorn[standard]==0.42.0
-pydantic==2.12.5
+# Versões alinhadas com o uv.lock do projeto (mantenha em sincronia ao dar `uv lock`).
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.4
 prometheus-client==0.26.0
-scikit-learn==1.8.0
-numpy==2.3.5
+scikit-learn==1.9.0
+numpy==2.4.6
 scipy==1.17.1
 joblib==1.5.3

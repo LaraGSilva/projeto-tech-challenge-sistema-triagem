@@ -1,60 +1,52 @@
 name: CD - Build and push image
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 env:
-    REGISTRY: ghcr.io #github container registry
-    IMAGE_NAME: laragsilva/projeto-tech-challenge-sistema-triagem
+  REGISTRY: ghcr.io
+  IMAGE_NAME: laragsilva/projeto-tech-challenge-sistema-triagem
 
 jobs:
-    build-and-push:
-        runs-on: ubuntu-latest
+  build-and-push:
+    runs-on: ubuntu-latest
 
-        permissions:
-            contents: read
-            packages: write
-            id_token: write
+    permissions:
+      contents: read
+      packages: write
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Login github container registry
-              uses: docker/login-action@v4
-              with:
-                registry: ${{ env.REGISTRY }}  
-                username: ${{ github.actor }}
-                password: ${{ secrets.GITHUB_TOKEN }}  
-            
-            - name: Build and Push
-              uses: docker/build-push-action@v7
-              with:
-                context: .
-                push: true
-                tags: |
-                    ${{ env.REGISTRY }}/${{env.IMAGE_NAME}}:${{github.sha}}
-            
-            
-            - name: Configure AWS Crendentials (OIDC)
-              uses: aws-actions/configure-aws-credentials@v6.1.0
-              with:
-                audience: sts.amazonaws.com.cn
-                aws-region: us-east-1
-                role-to-assume: arn:aws:iam:: #adicionar o arn da role
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Configure AWS Credentials
-              uses: aws-actions/configure-aes-credentials@v6.1.0
-              with:
-                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                aws-region: us-east-1
+      - name: Build e push da imagem da API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-            - name: Validar identdade (AWS <> OIDC)
-              run: |
-                echo "Testando conexão com a AWS .."
-                aws sts get-caller-identity
+      # --- Deploy na AWS (batch) --------------------------------------------
+      # Requer os secrets AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY no repo.
+      # TODO: ajustar região e o passo de deploy (ECS/Batch/Lambda) conforme a infra.
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-
+      - name: Validar identidade AWS
+        run: aws sts get-caller-identity

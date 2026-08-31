@@ -8,10 +8,10 @@ from airflow.operators.python import PythonOperator
 # ── Imports ──────────────────────────────────────────────────────────────────
 from src.data.ingest import load_data
 from src.data.validate import validate_schema
-from src.model.preprocessing import preprocess_merge
-from src.model.feature_engineering import transform_term_frequency
-from src.model.train import run_training    
 from src.model.evaluate import run_evaluation
+from src.model.feature_engineering import transform_term_frequency
+from src.model.preprocessing import preprocess_merge
+from src.model.train import run_training
 
 # ── Caminhos dos dados brutos ─────────────────────────────────────────────────
 _BASE = Path(__file__).parent.parent

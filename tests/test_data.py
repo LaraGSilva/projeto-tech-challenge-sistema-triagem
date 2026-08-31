@@ -1,22 +1,63 @@
+"""Testes das funções de dados/pré-processamento (puras, sem arquivos)."""
+
 import pandas as pd
-import os
+import pytest
 
-def test_schema_dados_processados():
-    # O teste espera que o preparar_dados.py já tenha rodado no pipeline
-    caminho_arquivo = 'dataset_processado.csv'
-    
-    assert os.path.exists(caminho_arquivo), "O arquivo de dados não foi gerado!"
-    
-    df = pd.read_csv(caminho_arquivo)
-    colunas_esperadas = ['feature1', 'feature2', 'target']
+from src.data.validate import validate_schema
+from src.model.preprocessing import PATH_LABELS, merge_labels
+from src.model.text import clean_text
 
-    # 1. Contrato de Colunas
-    for col in colunas_esperadas:
-        assert col in df.columns, f"QUEBRA DE CONTRATO: A coluna '{col}' sumiu do dataset!"
 
-    # 2. Contrato de Qualidade (Sem nulos)
-    assert df.isnull().sum().sum() == 0, "QUALIDADE: Existem valores nulos (NaN) no dataset."
+# ── clean_text ───────────────────────────────────────────────────────────────
+def test_clean_text_normaliza():
+    bruto = "Acute MYOCARDIAL infarction [see Fig. 2], troponin = 3.5 ng/mL!!!"
+    assert clean_text(bruto) == "acute myocardial infarction troponin ng ml"
 
-    # 3. Contrato de Regra de Negócio (Target binário)
-    valores_target = set(df['target'].unique())
-    assert valores_target.issubset({0, 1}), f"ANOMALIA: O target deveria ser 0 ou 1, mas veio: {valores_target}"
+
+def test_clean_text_entrada_invalida():
+    assert clean_text(None) == ""
+    assert clean_text(123) == ""
+
+
+# ── validate_schema ──────────────────────────────────────────────────────────
+def _df_valido(n=2000):
+    return pd.DataFrame(
+        {
+            "condition_label": [1, 2, 3, 4, 5] * (n // 5),
+            "medical_abstract": ["texto de laudo médico"] * n,
+        }
+    )
+
+
+def test_validate_schema_ok():
+    assert validate_schema(_df_valido()) is True
+
+
+def test_validate_schema_coluna_faltando():
+    df = _df_valido().drop(columns=["medical_abstract"])
+    with pytest.raises(AssertionError, match="Colunas faltando"):
+        validate_schema(df)
+
+
+def test_validate_schema_poucas_linhas():
+    with pytest.raises(AssertionError, match="mínimo"):
+        validate_schema(_df_valido(n=100))
+
+
+def test_validate_schema_label_nao_inteiro():
+    df = _df_valido()
+    df["condition_label"] = df["condition_label"].astype(float)
+    with pytest.raises(AssertionError, match="inteiro"):
+        validate_schema(df)
+
+
+# ── merge_labels ─────────────────────────────────────────────────────────────
+@pytest.mark.skipif(
+    not PATH_LABELS.exists(),
+    reason="medical_tc_labels.csv ausente (rastreado por DVC) — rode `dvc pull`",
+)
+def test_merge_labels_adiciona_nome_da_condicao():
+    df = pd.DataFrame({"condition_label": [1, 4], "medical_abstract": ["a", "b"]})
+    out = merge_labels(df)
+    assert "condition_name" in out.columns
+    assert out.loc[out.condition_label == 1, "condition_name"].iloc[0] == "neoplasms"

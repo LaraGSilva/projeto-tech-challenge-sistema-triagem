@@ -8,9 +8,16 @@ __pycache__/
 venv/
 env/
 
-src/data/*
+# dados versionados via DVC — mantém o código e os ponteiros .dvc, ignora os dados
+src/data/raw/*
+!src/data/raw/*.dvc
+!src/data/raw/.gitignore
+src/data/processed/
+src/data/features/
+src/data/interim/
 
 EDA/modelo/*
 
-.dvc
-.ruff_cahe
+.dvc/
+.ruff_cache/
+.pytest_cache/
