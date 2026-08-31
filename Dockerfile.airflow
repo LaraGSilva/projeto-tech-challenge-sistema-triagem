@@ -1,0 +1,102 @@
+# =============================================================================
+# Dockerfile.airflow — Multi-stage build com uv
+# =============================================================================
+#
+# Estágio 1 (builder): usa uv para exportar dependências do pyproject.toml,
+#                      compila os wheels com gcc. Stage descartado no final.
+# Estágio 2 (runtime): imagem final limpa, só copia os .whl compilados.
+#                      Sem gcc, sem uv, sem build-essential.
+#
+# Pré-requisito: pyproject.toml + uv.lock na raiz do projeto.
+# Não é necessário ter requirements.txt — o uv gera em tempo de build.
+#
+# Uso:
+#   docker compose build
+#   docker compose build --no-cache
+# =============================================================================
+
+ARG AIRFLOW_VERSION=2.8.0
+ARG PYTHON_VERSION=3.11
+ARG UV_VERSION=0.4.18
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STAGE 1 — builder
+# ─────────────────────────────────────────────────────────────────────────────
+FROM python:${PYTHON_VERSION}-slim AS builder
+
+ARG UV_VERSION
+
+# Compiladores para libs com extensões C (spacy, scikit-learn)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt
+
+RUN pip install 00no-cache-dir -r requirements.txt
+
+
+# Instala o uv (gerenciador de pacotes)
+# A imagem oficial do uv é usada para copiar o binário — sem pip install
+COPY --from=ghcr.io/astral-sh/uv:${UV_VERSION} /uv /usr/local/bin/uv
+
+WORKDIR /build
+
+# Copia apenas os arquivos de dependência (aproveita cache do Docker)
+# Se só o pyproject.toml/uv.lock mudarem, os layers anteriores são reutilizados
+COPY pyproject.toml uv.lock ./
+
+# Exporta as dependências de produção (--no-dev exclui ferramentas de dev)
+# e já compila os wheels em /wheels
+RUN uv export \
+        --format requirements-txt \
+        --no-dev \
+        --frozen \
+        --output-file requirements.txt \
+    && pip wheel \
+        --no-cache-dir \
+        --wheel-dir /wheels \
+        -r requirements.txt
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STAGE 2 — runtime
+# ─────────────────────────────────────────────────────────────────────────────
+FROM apache/airflow:${AIRFLOW_VERSION} AS runtime
+
+# Copia apenas os wheels compilados — gcc e uv ficam para trás
+COPY --from=builder /opt/venv/ opt/venv
+ENV PATH="/opt/venc/bin:$PATH"
+
+WORKDIR /app
+COPY . /app/
+
+RUN useradd m appuser && chown -R appuser /app
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn","main:app","--host","0.0.0.0","--port","8000"]
+
+USER airflow
+
+# Instala a partir dos wheels locais e limpa em seguida
+RUN pip install \
+        --no-cache-dir \
+        --no-index \
+        --find-links /wheels \
+        /wheels/*.whl \
+    && rm -rf /wheels
+
+# Baixa o modelo spaCy (não é wheel, precisa de internet no build)
+RUN python -m spacy download en_core_web_sm
+
+LABEL maintainer="ml_team" \
+      project="medical-abstracts-classification" \
+      airflow_version=${AIRFLOW_VERSION}

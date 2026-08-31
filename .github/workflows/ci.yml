@@ -1,10 +1,8 @@
 name: CI - MLOPS
 
+# Roda automaticamente a cada push (qualquer branch) e em PRs para a main.
 on:
   push:
-    branches:
-      - main
-      - develop
   pull_request:
     branches:
       - main
@@ -14,9 +12,37 @@ env:
   PYTHON_VERSION: "3.11"
 
 jobs:
-  validacao-ambiente:
+  # ── Automação 1: verificação de código + lint ──────────────────────────────
+  lint:
+    name: Lint (ruff)
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Instalar Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Validação de ambiente
+        run: uv run --no-project python validate_env.py
+
+      - name: Checar uv.lock em dia
+        run: uv lock --check
+
+      - name: Lint (ruff check)
+        # versão fixada = a do uv.lock; a config fica em [tool.ruff] do pyproject
+        run: uvx ruff@0.16.2 check src tests scripts dags
+
+  # ── Automação 2: testes ───────────────────────────────────────────────────
+  test:
+    name: Testes (pytest)
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,19 +59,5 @@ jobs:
       - name: Instalar dependencias
         run: uv sync --all-extras --dev
 
-      - name: Validar versão do Python
-        run: uv run python --version
-
-      - name: Run script validation
-        run: uv run python validate_env.py
-
-      - name: Verificar notebooks sem outputs (nbstripout)
-        run: |
-          uv run nbstripout --verify . || \
-          (echo "Erro: Notebook com outputs, limpe antes de commitar" && exit 1)
-
-    #   - name: Run Linter (ruff)
-    #     run: uv run ruff check .
-
-      - name: Echo output
-        run: echo "Ambiente validado com sucesso"
+      - name: Rodar testes
+        run: uv run pytest -v
