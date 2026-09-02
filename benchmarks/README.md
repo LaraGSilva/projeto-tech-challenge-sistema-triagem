@@ -26,10 +26,16 @@ python scripts/bench_latency.py --n 600  --concurrency 10 --out benchmarks/laten
 - A inferência do modelo em si já é barata (~2–3 ms). O restante da latência
   fim-a-fim (~45–50 ms no ambiente local via Docker Desktop) é overhead de
   HTTP / framework / port-forward do Docker no Windows.
-- A **Etapa 4** (ONNX Runtime / quantização) ataca a parte de inferência —
-  a comparação deve usar `model_inference_latency_seconds` e o mesmo script,
-  gerando `benchmarks/latency_optimized.json` para o "antes x depois".
-- Ambiente da medição: Docker Desktop (Windows), 1 worker uvicorn. Registrar
-  a máquina usada ao gravar o vídeo.
+- A **Etapa 4** (ONNX Runtime + quantização int8) ataca a parte de inferência.
+  Resultado: inferência pura de **1,07 ms → 0,21 ms (ONNX) → 0,25 ms (int8)**,
+  ~4–5× mais rápida, sem perda de acurácia. Comparação completa em
+  [../documents/comparacao.md](../documents/comparacao.md).
+- Ambiente da medição: 1 worker uvicorn, CPU. Registrar a máquina no vídeo.
 
-Arquivos gerados: `latency_baseline.json`, `latency_baseline_c10.json`.
+## Arquivos
+
+| Arquivo | Conteúdo |
+|---|---|
+| `latency_baseline.json`, `latency_baseline_c10.json` | baseline HTTP (antes da Etapa 4) |
+| `inference_comparison.json` | inferência pura: sklearn × ONNX fp32 × ONNX int8 (`scripts/bench_inference.py`) |
+| `latency_http_sklearn.json`, `latency_http_onnx-int8.json` | fim-a-fim HTTP por backend |

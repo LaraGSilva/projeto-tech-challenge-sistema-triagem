@@ -1,0 +1,23 @@
+{
+  "n_holdout": 2310,
+  "sklearn_pkl": {
+    "accuracy": 0.6199,
+    "f1_weighted": 0.6049,
+    "agreement_sklearn": 1.0
+  },
+  "onnx_fp32": {
+    "accuracy": 0.6216,
+    "f1_weighted": 0.6051,
+    "agreement_sklearn": 0.9853
+  },
+  "onnx_int8": {
+    "accuracy": 0.6216,
+    "f1_weighted": 0.6051,
+    "agreement_sklearn": 0.9853
+  },
+  "sizes_kb": {
+    "sklearn_pkl": 1823,
+    "onnx_fp32": 1552,
+    "onnx_int8": 1552
+  }
+}

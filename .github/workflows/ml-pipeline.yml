@@ -85,12 +85,18 @@ jobs:
           from src.model.evaluate import run_evaluation; \
           run_training('artifacts/dataset_processado.csv'); run_evaluation()"
 
+      - name: Otimizar (ONNX + quantização int8)
+        run: uv run python -m src.model.optimize
+
       - name: Salvar modelo como artefato
         uses: actions/upload-artifact@v4
         with:
           name: modelo-treinado
           path: |
             models/classifier.pkl
+            models/classifier.onnx
+            models/classifier.int8.onnx
             models/metadata.json
             models/evaluation.json
+            models/optimization.json
           retention-days: 30

@@ -1,0 +1,17 @@
+{
+  "url": "http://localhost:8000",
+  "requests": 300,
+  "concurrency": 1,
+  "errors": 0,
+  "wall_seconds": 0.896,
+  "throughput_rps": 334.7,
+  "latency_ms": {
+    "mean": 2.986,
+    "min": 2.304,
+    "p50": 2.678,
+    "p90": 4.089,
+    "p95": 4.609,
+    "p99": 5.883,
+    "max": 8.889
+  }
+}
