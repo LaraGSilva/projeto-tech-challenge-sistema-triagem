@@ -16,10 +16,14 @@ Este sistema de triagem automática de laudos médicos tem como principal objeti
 
 Como a inferência é **online** (resposta no momento da emissão do laudo), a API é
 servida em container: a imagem vive no **Amazon ECR** e roda como serviço no
-**Amazon ECS (Fargate)** atrás de um Application Load Balancer, que expõe
-`GET /health` (health check do target group), `GET /metrics` e `POST /predict`.
-O modelo (`models/classifier.pkl`) vai **embutido na imagem** — o container não
-depende de S3/EFS em runtime.
+**Amazon ECS (Fargate)**, que expõe `GET /` (UI de teste), `GET /health`,
+`GET /metrics`, `GET /docs` (Swagger) e `POST /predict`. O modelo
+(`models/classifier.pkl`) vai **embutido na imagem** — o container não depende de
+S3/EFS em runtime.
+
+A raiz `/` serve um frontend simples ([src/app/index.html](src/app/index.html)):
+campo de texto para o laudo e uma caixa com a classe prevista, a confiança e a
+distribuição de probabilidades por especialidade.
 
 ### Esteira contínua (`.github/workflows/cd.yml`)
 

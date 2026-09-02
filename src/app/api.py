@@ -27,7 +27,8 @@ from pathlib import Path
 
 import joblib
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     Counter,
@@ -47,6 +48,7 @@ logger = logging.getLogger(__name__)
 _BASE = Path(__file__).resolve().parents[2]
 MODEL_PATH = Path(os.getenv("MODEL_PATH", str(_BASE / "models" / "classifier.pkl")))
 METADATA_PATH = Path(os.getenv("METADATA_PATH", str(_BASE / "models" / "metadata.json")))
+INDEX_HTML = Path(__file__).parent / "index.html"
 
 # ── Métricas Prometheus ──────────────────────────────────────────────────────
 REQUEST_COUNT = Counter(
@@ -100,6 +102,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# API pública sem auth — libera CORS para o frontend funcionar mesmo servido
+# de outra origem (arquivo local, Live Server, etc.).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 
 # ── Contratos ────────────────────────────────────────────────────────────────
 class LaudoRequest(BaseModel):
@@ -136,6 +147,12 @@ async def prometheus_middleware(request, call_next):
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
+@app.get("/", include_in_schema=False)
+def index():
+    """Frontend simples de teste da API."""
+    return FileResponse(INDEX_HTML, media_type="text/html")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "model_loaded": "model" in _ml}
@@ -185,4 +202,6 @@ def predict(payload: LaudoRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("src.app.api:app", host="0.0.0.0", port=8000, reload=False)
+    # passa o objeto `app` (não a string) para não reimportar este módulo e
+    # registrar as métricas Prometheus duas vezes (DuplicateTimeseries).
+    uvicorn.run(app, host="0.0.0.0", port=8000)
