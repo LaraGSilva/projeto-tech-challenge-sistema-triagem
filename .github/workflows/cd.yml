@@ -1,10 +1,7 @@
 name: CD - Deploy da API no ECS
-
-# Dispara depois que o CI conclui na main e só faz deploy se o CI passou.
-# Também pode ser rodado manualmente pela aba Actions (workflow_dispatch).
 on:
   workflow_run:
-    workflows: ["CI - MLOPS"]        # precisa bater com o `name:` do ci.yml
+    workflows: ["CI - MLOPS"]        
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -18,14 +15,14 @@ env:
   ECS_CLUSTER: default
   ECS_SERVICE: triagem-app
   ECS_TASK_DEFINITION: .aws/task-definition.json
-  CONTAINER_NAME: Main               # nome do container na task definition (case-sensitive)
+  CONTAINER_NAME: Main
+  API_URL: https://tr-e215eefc2992410ca8d0949e7a3dcdf7.ecs.us-east-1.on.aws
 
 jobs:
   deploy:
     name: Build (ECR) e deploy (ECS Fargate)
     runs-on: ubuntu-latest
     environment: production
-    # roda em dispatch manual OU quando o CI concluiu com sucesso
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
@@ -76,11 +73,9 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
 
-      # Opcional: cadastre a variável de repositório API_URL (DNS do ALB, sem barra final)
       - name: Smoke test do endpoint
-        if: vars.API_URL != ''
         run: |
-          curl -fsS "${{ vars.API_URL }}/health"
-          curl -fsS -X POST "${{ vars.API_URL }}/predict" \
+          curl -fsS "${API_URL}/health"
+          curl -fsS -X POST "${API_URL}/predict" \
             -H 'Content-Type: application/json' \
             -d '{"texto":"Patient with acute chest pain and elevated troponin on ECG."}'
