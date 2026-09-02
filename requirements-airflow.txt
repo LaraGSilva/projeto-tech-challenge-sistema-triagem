@@ -1,0 +1,7 @@
+# Libs extras que a DAG de treino (dags/ml_pipeline_dag.py) importa, além do
+# que já vem na imagem base do Airflow (pandas/pyyaml já vêm).
+# pandas fixado em <2.2 para não conflitar com os providers da imagem oficial.
+pandas>=2.1.2,<2.2
+scikit-learn==1.9.0
+joblib==1.5.3
+mlflow-skinny==3.15.2

@@ -10,7 +10,6 @@ por task sob um run pai da execução da DAG.
 """
 
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import mlflow
 from airflow import DAG
@@ -19,13 +18,16 @@ from airflow.operators.python import PythonOperator
 from src.data.ingest import load_data
 from src.data.validate import validate_schema
 from src.model.evaluate import run_evaluation
-from src.model.preprocessing import build_dataset
+from src.model.preprocessing import PATH_LABELS, PATH_TRAIN, build_dataset
 from src.model.train import run_training
 
-_BASE = Path(__file__).resolve().parent.parent
-PATH_TRAIN_CSV = str(_BASE / "src" / "data" / "raw" / "medical_tc_train.csv")
-PATH_LABEL_CSV = str(_BASE / "src" / "data" / "raw" / "medical_tc_labels.csv")
-PATH_PROCESSED_CSV = str(_BASE / "src" / "data" / "processed" / "data_processed_final.csv")
+# Caminhos derivados do próprio pacote src/ — funcionam independentemente de
+# onde a pasta dags/ está montada no container.
+PATH_TRAIN_CSV = str(PATH_TRAIN)
+PATH_LABEL_CSV = str(PATH_LABELS)
+PATH_PROCESSED_CSV = str(
+    PATH_TRAIN.parent.parent / "processed" / "data_processed_final.csv"
+)
 
 MLFLOW_EXPERIMENT = "medical_abstracts_classification"
 
