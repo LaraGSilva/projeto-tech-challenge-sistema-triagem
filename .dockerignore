@@ -22,3 +22,4 @@ src/data/features/
 uv.lock
 models/test_split.pkl
 models/evaluation.json
+models/optimization.json

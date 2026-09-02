@@ -50,6 +50,15 @@ MODEL_PATH = Path(os.getenv("MODEL_PATH", str(_BASE / "models" / "classifier.pkl
 METADATA_PATH = Path(os.getenv("METADATA_PATH", str(_BASE / "models" / "metadata.json")))
 INDEX_HTML = Path(__file__).parent / "index.html"
 
+# Backend de inferência: "sklearn" (default) | "onnx" (ONNX fp32) | "onnx-int8"
+# (ONNX quantizado). Lido em tempo de startup. Ver Etapa 4 / documents/comparacao.md.
+ONNX_PATH = _BASE / "models" / "classifier.onnx"
+ONNX_INT8_PATH = _BASE / "models" / "classifier.int8.onnx"
+
+
+def _resolve_backend() -> str:
+    return os.getenv("MODEL_BACKEND", "sklearn").lower()
+
 # ── Métricas Prometheus ──────────────────────────────────────────────────────
 REQUEST_COUNT = Counter(
     "api_requests_total",
@@ -78,9 +87,6 @@ _ml: dict = {}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Carrega o modelo uma única vez, na subida do processo."""
-    logger.info("Carregando modelo: %s", MODEL_PATH)
-    _ml["model"] = joblib.load(MODEL_PATH)
-
     metadata = {}
     if METADATA_PATH.exists():
         metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8"))
@@ -88,8 +94,23 @@ async def lifespan(app: FastAPI):
     _ml["label_names"] = {
         int(k): str(v) for k, v in metadata.get("label_names", {}).items()
     }
+
+    backend = _resolve_backend()
+    if backend in ("onnx", "onnx-int8"):
+        from src.model.onnx_infer import OnnxClassifier
+
+        onnx_file = ONNX_INT8_PATH if backend == "onnx-int8" else ONNX_PATH
+        logger.info("Carregando modelo ONNX (%s): %s", backend, onnx_file)
+        _ml["model"] = OnnxClassifier(onnx_file, classes=metadata.get("classes"))
+    else:
+        logger.info("Carregando modelo sklearn: %s", MODEL_PATH)
+        _ml["model"] = joblib.load(MODEL_PATH)
+
+    _ml["backend"] = backend
     logger.info(
-        "Modelo carregado | classes=%s", list(_ml["model"].classes_)
+        "Modelo carregado | backend=%s | classes=%s",
+        backend,
+        list(_ml["model"].classes_),
     )
     yield
     _ml.clear()
@@ -155,7 +176,11 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model_loaded": "model" in _ml}
+    return {
+        "status": "ok",
+        "model_loaded": "model" in _ml,
+        "backend": _ml.get("backend", _resolve_backend()),
+    }
 
 
 @app.get("/metrics")

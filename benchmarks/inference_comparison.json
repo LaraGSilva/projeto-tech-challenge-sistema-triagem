@@ -1,0 +1,35 @@
+{
+  "n": 3000,
+  "warmup": 200,
+  "backends": {
+    "sklearn_pkl": {
+      "mean_ms": 1.0729,
+      "p50_ms": 1.0324,
+      "p95_ms": 1.2909,
+      "p99_ms": 1.9213,
+      "min_ms": 0.8756,
+      "throughput_rps": 932.0
+    },
+    "onnx_fp32": {
+      "mean_ms": 0.2076,
+      "p50_ms": 0.1858,
+      "p95_ms": 0.3111,
+      "p99_ms": 0.3622,
+      "min_ms": 0.1615,
+      "throughput_rps": 4817.7
+    },
+    "onnx_int8": {
+      "mean_ms": 0.2511,
+      "p50_ms": 0.1932,
+      "p95_ms": 0.2574,
+      "p99_ms": 0.4721,
+      "min_ms": 0.183,
+      "throughput_rps": 3983.1
+    }
+  },
+  "speedup_vs_sklearn": {
+    "sklearn_pkl": 1.0,
+    "onnx_fp32": 5.17,
+    "onnx_int8": 4.27
+  }
+}
