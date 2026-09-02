@@ -1,52 +1,86 @@
-name: CD - Build and push image
+name: CD - Deploy da API no ECS
 
+# Dispara depois que o CI conclui na main e só faz deploy se o CI passou.
+# Também pode ser rodado manualmente pela aba Actions (workflow_dispatch).
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI - MLOPS"]        # precisa bater com o `name:` do ci.yml
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: laragsilva/projeto-tech-challenge-sistema-triagem
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: triagem-app
+  ECS_CLUSTER: default
+  ECS_SERVICE: triagem-app
+  ECS_TASK_DEFINITION: .aws/task-definition.json
+  CONTAINER_NAME: Main               # nome do container na task definition (case-sensitive)
 
 jobs:
-  build-and-push:
+  deploy:
+    name: Build (ECR) e deploy (ECS Fargate)
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
+    environment: production
+    # roda em dispatch manual OU quando o CI concluiu com sucesso
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
-      - name: Checkout
+      - name: Checkout do commit que passou no CI
         uses: actions/checkout@v4
-
-      - name: Login no GitHub Container Registry
-        uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Build e push da imagem da API
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-      # --- Deploy na AWS (batch) --------------------------------------------
-      # Requer os secrets AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY no repo.
-      # TODO: ajustar região e o passo de deploy (ECS/Batch/Lambda) conforme a infra.
-      - name: Configurar credenciais AWS
+      - name: Configurar credenciais AWS (Learner Lab)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Validar identidade AWS
-        run: aws sts get-caller-identity
+      - name: Login no Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build e push da imagem para o ECR
+        id: build
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          IMAGE="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build -t "$IMAGE" -t "$REGISTRY/$ECR_REPOSITORY:latest" .
+          docker push "$IMAGE"
+          docker push "$REGISTRY/$ECR_REPOSITORY:latest"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Injetar a nova imagem na task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build.outputs.image }}
+
+      - name: Deploy no ECS (registra revisão + update do service)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      # Opcional: cadastre a variável de repositório API_URL (DNS do ALB, sem barra final)
+      - name: Smoke test do endpoint
+        if: vars.API_URL != ''
+        run: |
+          curl -fsS "${{ vars.API_URL }}/health"
+          curl -fsS -X POST "${{ vars.API_URL }}/predict" \
+            -H 'Content-Type: application/json' \
+            -d '{"texto":"Patient with acute chest pain and elevated troponin on ECG."}'
