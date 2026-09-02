@@ -31,6 +31,13 @@ def test_health(client):
     assert resp.json()["model_loaded"] is True
 
 
+def test_frontend_na_raiz(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "Sistema de Triagem Autom" in resp.text
+
+
 def test_predict_sucesso(client):
     resp = client.post("/predict", json={"texto": LAUDO})
     assert resp.status_code == 200
