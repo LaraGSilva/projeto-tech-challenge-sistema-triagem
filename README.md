@@ -1,6 +1,6 @@
-# Projeto Tech Challenge Fase 3
+# 👩🏻‍💻 Projeto Tech Challenge Fase 3
 
-## Sistema de triagem para inferência automática de laudos médicos
+## 🧑🏻‍⚕️ Sistema de triagem para inferência automática de laudos médicos
 
 Este sistema de triagem automática de laudos médicos tem como principal objetivo atuar na categorização de doenças com base em laudos médicos textuais. O projeto foi desenvolvido com o intuito de ter uma arquitetura robusta, de baixa latência, otimizada e com monitoramento contínuo.
 
@@ -11,7 +11,71 @@ Este sistema de triagem automática de laudos médicos tem como principal objeti
     - cardiovascular diseases
     - general pathological conditions
 
-## Deploy (AWS ECR + ECS Fargate)
+## Arquitetura macro
+
+```mermaid
+flowchart TD
+    DATA[("Medical Abstracts TC Corpus (DVC)")]
+    USER(["Usuário / laudo médico"])
+
+    subgraph TRAIN["Treino do modelo — src/"]
+        PIPE["src/pipeline.py e src/model/*<br/>preprocess, train, evaluate, optimize"]
+        MODELS[["models/<br/>classifier.pkl, classifier.onnx, classifier.int8.onnx<br/>metadata.json, evaluation.json"]]
+        PIPE --> MODELS
+    end
+    DATA --> PIPE
+
+    subgraph ORCH["Orquestração — docker-compose.yaml"]
+        DAG["Airflow — DAG ml_medical_pipeline<br/>ingest, validate, preprocess, train, evaluate"]
+        MLF[("MLflow tracking")]
+        DAG --> MLF
+    end
+    DATA -.-> DAG
+    DAG -.->|retreino| MODELS
+
+    subgraph GHA["CI/CD — GitHub Actions"]
+        CI["ci.yml — ruff + pytest"]
+        MLP["ml-pipeline.yml — dvc pull, train, optimize"]
+        CD["cd.yml — build imagem, push ECR, deploy ECS"]
+        CI -->|sucesso| CD
+    end
+    DATA -.-> MLP
+    MLP -.->|artefatos| MODELS
+    MODELS --> CD
+
+    subgraph AWS["AWS us-east-1"]
+        ECR[("ECR — triagem-app")]
+        ECS["ECS Fargate — service triagem-app, cluster default"]
+        LOGS[("CloudWatch Logs")]
+        CD --> ECR --> ECS --> LOGS
+    end
+
+    subgraph SERVE["API de inferência — imagem Docker"]
+        API["FastAPI + uvicorn — src/app/api.py<br/>rotas: GET raiz UI, POST /predict, /health, /metrics, /docs<br/>MODEL_BACKEND: sklearn, onnx ou onnx-int8"]
+    end
+    ECS --> API
+    MODELS -.->|embutido na imagem| API
+    USER --> API
+
+    subgraph MON["Monitoramento — docker-compose.monitoring.yaml"]
+        PROM[("Prometheus — scrape de /metrics")]
+        GRAF["Grafana — dashboard provisionado"]
+        PROM --> GRAF
+    end
+    API -->|metrics| PROM
+```
+
+| Camada | Componentes | Onde |
+|---|---|---|
+| **Dados** | Medical Abstracts TC Corpus, versionado com DVC | `src/data/`, `*.csv.dvc` |
+| **Modelo** | TF-IDF + Regressão Logística (`sklearn.Pipeline`); export ONNX + quantização int8 | `src/model/`, `models/` |
+| **Orquestração** | Airflow (CeleryExecutor + Postgres + Redis) + MLflow | `docker-compose.yaml`, `dags/` |
+| **API** | FastAPI/uvicorn, modelo embutido na imagem, backend selecionável | `src/app/api.py`, `Dockerfile` |
+| **CI/CD** | lint+testes → pipeline de treino → build/push/deploy | `.github/workflows/` |
+| **Nuvem** | ECR (imagem) → ECS Fargate (serviço) → CloudWatch (logs) | `.aws/task-definition.json` |
+| **Observabilidade** | Prometheus (coleta) + Grafana (7 painéis) | `monitoring/` |
+
+## ☁️ Deploy (AWS ECR + ECS Fargate)
 
 Como a inferência é **online** (resposta no momento da emissão do laudo), a API é
 servida em container: a imagem vive no **Amazon ECR** e roda como serviço no

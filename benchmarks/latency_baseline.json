@@ -3,15 +3,15 @@
   "requests": 500,
   "concurrency": 10,
   "errors": 0,
-  "wall_seconds": 4.564,
-  "throughput_rps": 109.5,
+  "wall_seconds": 3.433,
+  "throughput_rps": 145.7,
   "latency_ms": {
-    "mean": 88.345,
-    "min": 6.635,
-    "p50": 57.584,
-    "p90": 90.111,
-    "p95": 102.093,
-    "p99": 1462.174,
-    "max": 1478.585
+    "mean": 67.847,
+    "min": 8.507,
+    "p50": 60.32,
+    "p90": 55.488,
+    "p95": 65.521,
+    "p99": 424.272,
+    "max": 453.29
   }
 }

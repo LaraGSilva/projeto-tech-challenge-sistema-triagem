@@ -1,4 +1,4 @@
-# Modelagem — Análise dos dados
+# 🎲 Modelagem — Análise dos dados
 
 ## Dataset
 
@@ -26,7 +26,7 @@ Arquivos versionados via **DVC** (`src/data/raw/*.csv.dvc`). Notebooks:
 
 ![Distribuição das condições](image.png)
 
-### Observação — desbalanceamento
+### 🔍 Observação — desbalanceamento
 
 Há diferença relevante de volumetria: a classe 5 tem ~3,2× a classe 2. Isso
 enviesa o modelo para as classes majoritárias e derruba o recall das minoritárias.

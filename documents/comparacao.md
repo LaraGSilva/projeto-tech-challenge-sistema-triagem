@@ -1,4 +1,4 @@
-# Comparação de latências — baseline × otimizado (Etapa 4)
+# 📊 Comparação de latências — baseline × otimizado (Etapa 4)
 
 ## Objetivo
 
@@ -56,7 +56,7 @@ Ambiente: Windows, CPU, 1 worker uvicorn, `CPUExecutionProvider`. O backend da A
 | `classifier.pkl` | 1.823 KB |
 | `classifier.onnx` / `classifier.int8.onnx` | ~1.553 KB |
 
-## Análise
+## ✏️ Análise
 
 - **O ganho real vem da conversão para ONNX Runtime (~5×).** O `onnxruntime`
   executa a vetorização TF-IDF e o classificador linear em C++, evitando o

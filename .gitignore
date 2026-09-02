@@ -21,3 +21,4 @@ EDA/modelo/*
 .dvc/
 .ruff_cache/
 .pytest_cache/
+logs/
