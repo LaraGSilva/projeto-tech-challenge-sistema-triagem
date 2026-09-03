@@ -1,5 +1,22 @@
 # 👩🏻‍💻 Projeto Tech Challenge Fase 3
 
+[![CI - MLOPS](https://github.com/LaraGSilva/projeto-tech-challenge-sistema-triagem/actions/workflows/ci.yml/badge.svg)](https://github.com/LaraGSilva/projeto-tech-challenge-sistema-triagem/actions/workflows/ci.yml)
+[![CD - Deploy da API no ECS](https://github.com/LaraGSilva/projeto-tech-challenge-sistema-triagem/actions/workflows/cd.yml/badge.svg)](https://github.com/LaraGSilva/projeto-tech-challenge-sistema-triagem/actions/workflows/cd.yml)
+
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-API%20online-009688?logo=fastapi&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-TF--IDF%20%2B%20LogReg-F7931E?logo=scikitlearn&logoColor=white)
+![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-int8-005CED?logo=onnx&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-image-2496ED?logo=docker&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-ECR%20%2B%20ECS%20Fargate-FF9900?logo=amazonwebservices&logoColor=white)
+![Airflow](https://img.shields.io/badge/Airflow-DAG-017CEE?logo=apacheairflow&logoColor=white)
+![MLflow](https://img.shields.io/badge/MLflow-tracking-0194E2?logo=mlflow&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-metrics-E6522C?logo=prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-dashboard-F46800?logo=grafana&logoColor=white)
+![DVC](https://img.shields.io/badge/DVC-data-945DD6?logo=dvc&logoColor=white)
+![uv](https://img.shields.io/badge/uv-env-DE5FE9?logo=uv&logoColor=white)
+![Ruff](https://img.shields.io/badge/Ruff-lint-D7FF64?logo=ruff&logoColor=black)
+
 ## 🧑🏻‍⚕️ Sistema de triagem para inferência automática de laudos médicos
 
 Este sistema de triagem automática de laudos médicos tem como principal objetivo atuar na categorização de doenças com base em laudos médicos textuais. O projeto foi desenvolvido com o intuito de ter uma arquitetura robusta, de baixa latência, otimizada e com monitoramento contínuo.
@@ -11,7 +28,7 @@ Este sistema de triagem automática de laudos médicos tem como principal objeti
     - cardiovascular diseases
     - general pathological conditions
 
-## Arquitetura macro
+## 🏛️ Arquitetura macro
 
 ```mermaid
 flowchart TD
@@ -75,6 +92,10 @@ flowchart TD
 | **Nuvem** | ECR (imagem) → ECS Fargate (serviço) → CloudWatch (logs) | `.aws/task-definition.json` |
 | **Observabilidade** | Prometheus (coleta) + Grafana (7 painéis) | `monitoring/` |
 
+## ✨ Vídeo STAR 
+
+Demonstração do projeto:  https://www.canva.com/design/DAHUKiqLOws/CppIJfJZ2EkSOSsJo9OTdg/view?utm_content=DAHUKiqLOws&utm_campaign=designshare&utm_medium=link&utm_source=recording_view
+
 ## ☁️ Deploy (AWS ECR + ECS Fargate)
 
 Como a inferência é **online** (resposta no momento da emissão do laudo), a API é
@@ -88,7 +109,7 @@ A raiz `/` serve um frontend simples ([src/app/index.html](src/app/index.html)):
 campo de texto para o laudo e uma caixa com a classe prevista, a confiança e a
 distribuição de probabilidades por especialidade.
 
-### Esteira contínua (`.github/workflows/cd.yml`)
+### 🌀 Esteira contínua (`.github/workflows/cd.yml`)
 
 A cada push na `main`, o **CI** (`ci.yml`) roda lint + testes; ao passar, o **CD**
 dispara automaticamente (`workflow_run`) e:
@@ -117,7 +138,7 @@ Também dá para rodar sob demanda em **Actions → CD → Run workflow**.
 
 ## Executando o projeto
 
-### Local
+### 📍Local
 
 Pré-requisito: [uv](https://docs.astral.sh/uv/) e Docker Desktop.
 
@@ -135,7 +156,7 @@ uv run python -m src.pipeline        # treina o modelo (gera models/classifier.p
 
 Detalhes por stack em [documents/dags.md](./documents/dags.md) e [documents/monitoramento.md](./documents/monitoramento.md).
 
-### Na AWS
+### ☁️ Na AWS
 
 O modelo já está deployado no **ECS Fargate**. Endpoint público:
 
@@ -152,7 +173,7 @@ temporárias do AWS Academy) e disparar o workflow **CD** (`Actions → CD → R
 workflow`, ou automático quando o CI passa na `main`) — ver a seção
 **Deploy (AWS ECR + ECS Fargate)** acima.
 
-## Orquestração: Airflow
+## 🪉 Orquestração: Airflow
 
 DAG `ml_medical_pipeline` no Airflow (CeleryExecutor + Postgres + Redis + MLflow via
 `docker-compose.yaml`) que executa `ingest → validate → preprocess → train →
@@ -160,7 +181,7 @@ evaluate`, com tracking no MLflow e gate de qualidade (falha se a acurácia cair
 abaixo do threshold). Estrutura das DAGs e das tasks:
 [documents/dags.md](./documents/dags.md).
 
-## Monitoramento: Prometheus e Grafana
+## 🔍 Monitoramento: Prometheus e Grafana
 
 A API é instrumentada com `prometheus_client` (contagem de requisições, latência
 HTTP, latência de inferência do modelo e predições por classe). O `docker-compose.monitoring.yaml`
@@ -168,20 +189,20 @@ sobe API + Prometheus (scrape em `/metrics`) + Grafana com datasource e dashboar
 já provisionados (`monitoring/`). Explicação completa e o JSON do dashboard:
 [documents/monitoramento.md](./documents/monitoramento.md).
 
-## Model Card
+## 📊 Model Card
 
 Classificador NLP leve (TF-IDF + Regressão Logística, `sklearn.Pipeline`) para
 categoria de doença a partir do texto do laudo — 5 classes, acurácia ~0,62 e
 F1-weighted ~0,60 no conjunto de teste. Uso pretendido, dados, métricas por classe
 e limitações: [documents/model_card.md](./documents/model_card.md).
 
-## Modelagem
+## 🎲 Modelagem
 
 Análise exploratória do *Medical Abstracts TC Corpus* (11.550 laudos de treino,
 2.888 de teste, 5 classes desbalanceadas) e as decisões de pré-processamento e
 vetorização que embasaram o modelo: [documents/analise_dados.md](./documents/analise_dados.md).
 
-## Comparação de latências
+## 🆚 Comparação de latências
 
 Otimização da inferência (Etapa 4): o `Pipeline` sklearn foi convertido para
 **ONNX Runtime** (`skl2onnx`) e depois **quantizado para int8**
@@ -199,7 +220,3 @@ linear leve, melhora o p95 (cauda mais estável) sem perda de acurácia, mas com
 pouco impacto na latência média. Metodologia, números fim-a-fim e análise:
 [documents/comparacao.md](./documents/comparacao.md). Gerar os artefatos:
 `uv run python -m src.model.optimize` e `uv run python scripts/bench_inference.py`.
-
-## Vídeo STAR
-
-Demonstração do projeto (método STAR, ≤ 5 min): (link)
