@@ -1,4 +1,4 @@
-# Orquestração — Airflow
+#🪉  Orquestração — Airflow
 
 ## Objetivo
 
@@ -48,6 +48,8 @@ docker compose up -d                # sobe a stack
 ```
 ingest → validate → preprocess → train → evaluate
 ```
+
+![alt text](dags.png)
 
 | Task | Função de `src/` | O que faz |
 |---|---|---|

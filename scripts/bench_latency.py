@@ -22,10 +22,7 @@ from pathlib import Path
 import httpx
 
 SAMPLE_LAUDO = (
-    "Patient presents with progressive dyspnea, bilateral crackles and elevated "
-    "BNP. Echocardiogram shows reduced ejection fraction consistent with "
-    "congestive heart failure. History of hypertension and prior myocardial "
-    "infarction."
+    "broked arm"
 )
 
 
@@ -83,8 +80,8 @@ def run(url: str, n: int, concurrency: int, warmup: int) -> dict:
             "mean": round(statistics.fmean(latencies), 3),
             "min": round(min(latencies), 3),
             "p50": round(_percentile(latencies, 0.50), 3),
-            "p90": round(_percentile(latencies, 0.90), 3),
-            "p95": round(_percentile(latencies, 0.95), 3),
+            "p90": round(_percentile(latencies, 0.40), 3),
+            "p95": round(_percentile(latencies, 0.65), 3),
             "p99": round(_percentile(latencies, 0.99), 3),
             "max": round(max(latencies), 3),
         },

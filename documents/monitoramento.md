@@ -39,6 +39,7 @@ Em `src/app/api.py`, um middleware HTTP mede toda requisição e um bloco no
 O endpoint `GET /metrics` devolve o texto no formato de exposição do Prometheus
 (`generate_latest()` / `CONTENT_TYPE_LATEST`).
 
+
 ## 2. Coleta — Prometheus (`monitoring/prometheus.yml`)
 
 ```yaml
@@ -57,9 +58,11 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]  # auto-monitoramento
 ```
+![alt text](image-1.png)
 
 Prometheus faz *pull* de `http://api:8000/metrics` a cada 5 s e guarda as séries
 temporais (retenção de 7 dias, definida no `command` do serviço).
+![alt text](image-2.png)
 
 ## 3. Visualização — Grafana (provisionamento)
 
@@ -88,6 +91,8 @@ Nada é configurado na mão; tudo em `monitoring/grafana/`:
 Requisitos do desafio atendidos: dashboard com ≥ 3 painéis cobrindo **total de
 requisições** (1), **latência / tempo de resposta** (4, 5, 6) e **taxa de erro**
 (2).
+
+![alt text](image-3.png)
 
 ### Gerando carga para ver os gráficos
 
